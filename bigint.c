@@ -29,6 +29,10 @@ static bigint_t *trim(bigint_t *x) {
   return x;
 }
 
+/*
+ * Utilities
+ */
+
 bigint_t *bz_new(uint32_t cap) {
   bigint_t *x;
   uint32_t i;
@@ -55,7 +59,7 @@ void bz_free(bigint_t *x) {
   free(x);
 }
 
-static void bz_copy(bigint_t *from, bigint_t *to) {
+ void bz_copy(bigint_t *from, bigint_t *to) {
   uint32_t i;
 
   assert(to->cap >= from->cap);
@@ -88,6 +92,10 @@ void bz_print(bigint_t *x) {
   } while (i-- != 0);
 }
 
+/*
+ * Comparison functions.
+ */
+
 /* -1 = less than, 0 = equal, 1 = greater than. */
 static int bz_scompare_abs(bigint_t *x, bigint_t *y) {
   uint32_t i, xi, yi;
@@ -118,6 +126,10 @@ int bz_scompare(bigint_t *x, bigint_t *y) {
     return 1;
   return bz_scompare_abs(x, y);
 }
+
+/*
+ * Operations
+ */
 
 /* Returns the product of x * y. */
 static void bz_smult_(bigint_t *x, bigint_t *y, bigint_t *p) {
@@ -170,6 +182,9 @@ bigint_t *bz_pmult(bigint_t *x, bigint_t *y) {
   t = y->len;
 
   nthreads = omp_get_max_threads();
+  /* We can split up to be at most the min of the max number of
+     threads or the number of digits in x. */
+  nthreads = nthreads < n ? nthreads : n;
   omp_set_num_threads(nthreads);
 
   d = n / nthreads;
