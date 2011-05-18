@@ -16,7 +16,7 @@ typedef struct {
   bool neg;
 } bigint_t;
 
-bigint_t *bz_new();
+bigint_t *bz_new(size_t);
 bigint_t *bz_clone(bigint_t *);
 void bz_copy(bigint_t *, bigint_t *);
 void bz_free(bigint_t *);
