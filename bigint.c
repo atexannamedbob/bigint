@@ -9,15 +9,15 @@
 
 typedef bigint_t *(*bz_binop_t)(bigint_t *, bigint_t *);
 typedef void (*bz_binop_inplace_t)(bigint_t *, bigint_t *, bigint_t *);
-typedef bigint_t *(*bz_shift_t)(bigint_t *, uint32_t);
+typedef bigint_t *(*bz_shift_t)(bigint_t *, size_t);
 typedef int (*bz_compare_t)(bigint_t *, bigint_t *);
 
-static const uint64_t upper_mask = ~0ull << RADIXBITS;
-static const uint64_t lower_mask = ~0ull >> RADIXBITS;
+static const ddigit_t upper_mask = ~0ull << RADIXBITS;
+static const ddigit_t lower_mask = ~0ull >> RADIXBITS;
 
 /* Trim length to be actual length, not counting leading zeros. */
 static bigint_t *trim(bigint_t *x) {
-  uint32_t i = x->len - 1;
+  size_t i = x->len - 1;
 
   do {
     if (x->a[i] == 0)
@@ -33,13 +33,13 @@ static bigint_t *trim(bigint_t *x) {
  * Utilities
  */
 
-bigint_t *bz_new(uint32_t cap) {
+bigint_t *bz_new(size_t cap) {
   bigint_t *x;
-  uint32_t i;
+  size_t i;
 
   x = (bigint_t *)malloc(sizeof(bigint_t));
   assert(x != NULL);
-  x->a = (digit_t *)malloc(cap * sizeof(uint32_t));
+  x->a = (digit_t *)malloc(cap * sizeof(digit_t));
   assert(x->a != NULL);
 
   for (i = 0; i < cap; ++i)
@@ -60,7 +60,7 @@ void bz_free(bigint_t *x) {
 }
 
  void bz_copy(bigint_t *from, bigint_t *to) {
-  uint32_t i;
+  size_t i;
 
   assert(to->cap >= from->cap);
   to->len = from->len;
@@ -80,7 +80,7 @@ bigint_t *bz_clone(bigint_t *x) {
 }
 
 void bz_print(bigint_t *x) {
-  uint32_t i = x->len - 1;
+  size_t i = x->len - 1;
 
   if (x->len == 0)
     return;
@@ -98,7 +98,7 @@ void bz_print(bigint_t *x) {
 
 /* -1 = less than, 0 = equal, 1 = greater than. */
 static int bz_scompare_abs(bigint_t *x, bigint_t *y) {
-  uint32_t i, xi, yi;
+  size_t i, xi, yi;
 
   if (x->len < y->len)
     return -1;
@@ -133,7 +133,7 @@ int bz_scompare(bigint_t *x, bigint_t *y) {
 
 /* Returns the product of x * y. */
 static void bz_smult_(bigint_t *x, bigint_t *y, bigint_t *p) {
-  uint32_t i, j, n, t;
+  size_t i, j, n, t;
   digit_t c, u, v;
   ddigit_t inner;
 
@@ -175,7 +175,7 @@ bigint_t *bz_smult(bigint_t *x, bigint_t *y) {
 
 bigint_t *bz_pmult(bigint_t *x, bigint_t *y) {
   int i, nthreads;
-  uint32_t j, n, t, d, l;
+  size_t j, n, t, d, l;
   bigint_t **partials, *p, *partial, *tmp;
 
   n = x->len;
@@ -233,7 +233,7 @@ static void bz_div_(bigint_t *x, bigint_t *y, bigint_t *q, bigint_t *r,
 		    bz_shift_t shiftl, bz_compare_t comp) {
   bigint_t *yshifted, *qit, *ytz, *x3, *yb, *qyb;
   bigint_t *tmp;
-  uint32_t i, n, t;
+  size_t i, n, t;
   digit_t yt1, yt2;
 
   /* If x < y, then quotient is 0 with x as the remainder. */

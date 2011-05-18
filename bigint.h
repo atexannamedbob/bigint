@@ -11,8 +11,8 @@ typedef uint64_t ddigit_t;
 
 typedef struct {
   digit_t *a;
-  uint32_t len;
-  uint32_t cap;
+  size_t len;
+  size_t cap;
   bool neg;
 } bigint_t;
 
