@@ -1,3 +1,6 @@
+#ifndef _BIGINT_H_
+#define _BIGINT_H_
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -41,3 +44,5 @@ bigint_t *bz_pand(bigint_t *, bigint_t *);
 bigint_t *bz_por(bigint_t *, bigint_t *);
 bigint_t *bz_pxor(bigint_t *, bigint_t *);
 bigint_t *bz_pnot(bigint_t *, bigint_t *);
+
+#endif /* _BIGINT_H_ */

@@ -209,7 +209,8 @@ bigint_t *bz_pmult(bigint_t *x, bigint_t *y) {
   return trim(p);
 }
 
-/* Returns the quotient of x / y and stores the remainder into r. */
+/* Stores the quotient of x / y into q and the remainder into r, if
+   non-NULL. */
 static void bz_div_(bigint_t *x, bigint_t *y, bigint_t *q, bigint_t *r,
 		    bz_binop_t mult, bz_binop_inplace_t mult_,
 		    bz_binop_t add,
