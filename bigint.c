@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <math.h>
 #include <omp.h>
 
 #include "bigint.h"
@@ -268,7 +267,7 @@ static void bz_div_(bigint_t *x, bigint_t *y, bigint_t *q, bigint_t *r,
     if (x->a[i] == yt1) {
       q->a[i-t-2] = ~0 - 1;
     } else {
-      q->a[i-t-2] = ((ddigit_t)(x->a[i] << RADIXBITS) +
+      q->a[i-t-2] = (((ddigit_t)x->a[i] << RADIXBITS) +
 		     (ddigit_t)x->a[i-1]) / (ddigit_t)yt1;
     }
 
