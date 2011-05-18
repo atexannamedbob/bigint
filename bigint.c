@@ -140,7 +140,7 @@ static void bz_smult_(bigint_t *x, bigint_t *y, bigint_t *p) {
   n = x->len;
   t = y->len;
   p->neg = x->neg != y->neg;
-  p->len = n + t;
+  p->len = n+t;
   assert(p->cap >= n+t);
 
   for (i = 0; i < t; ++i) {
@@ -210,7 +210,7 @@ bigint_t *bz_pmult(bigint_t *x, bigint_t *y) {
 
   p = bz_new(n+t);
   p->neg = x->neg != y->neg;
-  p->len = n + t;
+  p->len = n+t;
 
   tmp = bz_new(n+t);
   for (i = 0; i < nthreads; ++i) {
