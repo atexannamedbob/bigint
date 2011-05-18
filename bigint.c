@@ -95,20 +95,19 @@ static int bz_scompare_abs(bigint_t *x, bigint_t *y) {
 
   if (x->len < y->len)
     return -1;
-  else if (x->len > y->len)
+  if (x->len > y->len)
     return 1;
-  else {
-    for (i = 0; i < x->len; ++i) {
-      xi = x->a[i];
-      yi = y->a[i];
-      if (xi < yi)
-	return 1;
-      else if (xi > yi)
-	return -1;
-    }
-
-    return 0;
+  
+  for (i = 0; i < x->len; ++i) {
+    xi = x->a[i];
+    yi = y->a[i];
+    if (xi < yi)
+      return 1;
+    if (xi > yi)
+      return -1;
   }
+
+  return 0;
 }
 
 int bz_scompare(bigint_t *x, bigint_t *y) {
@@ -118,7 +117,7 @@ int bz_scompare(bigint_t *x, bigint_t *y) {
     return -1;
   if (!x->neg && y->neg)
     return 1;
-  return bz_scompare(x, y);
+  return bz_scompare_abs(x, y);
 }
 
 /* Returns the product of x * y. */
