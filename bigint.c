@@ -43,6 +43,9 @@ bool bz_pequal(bigint_t* left, bigint_t* right){
 	if(left->len != right->len){
 		return 0;
 	}
+	if(left->neg != right->neg){
+		return 0;
+	}
 	size_t i;
 	bool equality = true;
 	#pragma omp parallel for shared(equality)
