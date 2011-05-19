@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 /* We use radix 2^32 digits. */
 #define RADIXBITS 32

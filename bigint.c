@@ -15,7 +15,72 @@ typedef int (*bz_compare_t)(bigint_t *, bigint_t *);
 static const ddigit_t upper_mask = ~0ull << RADIXBITS;
 static const ddigit_t lower_mask = ~0ull >> RADIXBITS;
 
+int main() {
+	bigint_t *x, *y, *p;
+	x = bz_new(4);
+	y =  bz_new(4);
+	x->len = 4;
+	y->len = 4;
+	x->a[0] = UINT32_MAX;
+	y->a[0] = UINT32_MAX;
+	x->a[1] = 999999;
+	y->a[1] = 899999;
+	x->a[2] = UINT32_MAX;
+	y->a[2] = UINT32_MAX;
+	x->a[3] = UINT32_MAX;
+	y->a[3] = UINT32_MAX;
+	
+	bool value = bz_pequal(x,y);
+	//bz_print(p);
+	printf("truth = %d", value);
+	printf("\n");
+	
+}
 
+//TODO
+bool bz_pequal(bigint_t* left, bigint_t* right){
+	
+	if(left->len != right->len){
+		return 0;
+	}
+	
+	size_t i;
+	bool equality = true;
+	#pragma omp parallel for shared(equality)
+	for(i=0; i<left->len; ++i){
+		if ( equality ) {
+			if( left->a[i] != right->a[i]){
+			equality = false;
+			#pragma omp flush (equality)
+			}
+		}
+	}
+		return equality;
+}	
+
+bool bz_sequal(bigint_t* left, bigint_t* right){
+
+	if(left->len != right->len){
+		return true;
+	}
+	size_t i;
+	for(i=0; i<left->len; ++i){
+		if( left->a[i] != right->a[i]){
+			return false;				
+		}
+	}
+	
+	return true;
+}
+
+void bz_sand_(bigint_t* left, bigint_t* right, bigint_t* temp){
+	//temp-> neg = left->neg & righ->neg;
+	size_t i;
+	for(i=0; i< temp->len; ++i){
+		temp->a[i] = left->a[i] & right->a[i];
+		
+	}
+}
 
 bigint_t* bz_sand(bigint_t* left, bigint_t* right){
 	size_t templen = 0;
@@ -31,150 +96,199 @@ bigint_t* bz_sand(bigint_t* left, bigint_t* right){
 	bigint_t * temp = bz_new(tempcap);
 	temp->len = templen;
 	temp->cap = templen;
-	//temp-> neg = left->neg & righ->neg;
-	size_t i;
-	for(i=0; i< temp->len; ++i){
-		temp->a[i] = left->a[i] & right->a[i];
-		
-	}
+	bz_sand_(left,right,temp);
 	return temp;
 }
-
-bigint_t* bz_snot( bigint_t* right){
-	
-	
-	bigint_t * temp = bz_new(right->cap);
-	temp->cap = right->len;
+void bz_snot_( bigint_t* right, bigint_t* temp){
 	//temp-> neg = ~righ->neg;
 	size_t i;
 	for(i=0; i<temp->len; ++i){
 		temp->a[i] = ~right->a[i];
 		
 	}
+}
+
+bigint_t* bz_snot( bigint_t* right){
+	bigint_t * temp = bz_new(right->cap);
+	temp->cap = right->len;
+	bz_snot_(right, temp);
 	return temp;
+}
+
+void bz_pnot_( bigint_t* right, bigint_t* temp){
+	//temp-> neg = ~righ->neg;
+	size_t i;
+	#pragma omp parallel for
+	for(i=0; i<temp->len; ++i){
+		temp->a[i] = ~right->a[i];
+		
+	}
 }
 
 bigint_t* bz_pnot( bigint_t* right){
 	bigint_t * temp = bz_new(right->cap);
 	temp->cap = right->len;
-	//temp-> neg = ~righ->neg;
-	size_t i;
-	#pragma omp parallel for
-	for(i=0; i<temp->len; ++i){
-		temp->a[i] = ~right->a[i];
-		
-	}
 	return temp;
 }
 
-bigint_t* bz_sor(bigint_t* left, bigint_t* right){
+void bz_sor_(bigint_t* left, bigint_t* right, bigint_t* temp){
 	
-	size_t lt = 0;
+	//temp-> neg = left->neg | righ->neg;
+	size_t i;
+	if(left->len > right->len){
+		for(i=0; i<right->len; ++i){
+			temp->a[i] = left->a[i] | right->a[i];
+		}
+		for(i=right->len; i<temp->len; ++i){
+			temp->a[i] = left->a[i] | 0;
+		}
+	}else{
+		for(i=0; i<left->len; ++i){
+			temp->a[i] = left->a[i] | right->a[i];
+		}
+		for(i=left->len; i<temp->len; ++i){
+			temp->a[i] = 0 | right->a[i];
+		}
+		
+	}
+
+}
+
+
+bigint_t* bz_sor(bigint_t* left, bigint_t* right){
 	size_t tempcap = 0;
 	size_t templen = 0;
 	if(left->len > right->len){
 		templen = left->len;
 		tempcap = left->cap;
-		lt = right->len;
 	}else{
 		templen = right->len;
 		tempcap = right->cap;
-		lt = left->len;
 	}
 	bigint_t * temp = bz_new(tempcap);
-	
+	bz_sor_(left,right,temp);
+	return temp;
+}
+
+void bz_por_(bigint_t* left, bigint_t* right, bigint_t* temp){
 	//temp-> neg = left->neg | righ->neg;
 	size_t i;
-	for(i=0; i<lt; ++i){
-		temp->a[i] = left->a[i] | right->a[i];
-	}
-	
+		
 	if(left->len > right->len){
-		for(i=lt; i<temp->len; ++i){
-			temp->a[i] = left->a[i] | 0;
+		#pragma omp parallel
+		{
+			#pragma omp for nowait
+			for(i=0; i<right->len; ++i){
+				temp->a[i] = left->a[i] | right->a[i];
+			}
+			#pragma omp for nowait
+			for(i=right->len; i<temp->len; ++i){
+				temp->a[i] = left->a[i] | 0;
+			}
 		}
 	}else{
-		for(i=lt; i<temp->len; ++i){
-			temp->a[i] = 0 | right->a[i];
+		#pragma omp parallel
+		{
+			#pragma omp for nowait
+			for(i=0; i<left->len; ++i){
+				temp->a[i] = left->a[i] | right->a[i];
+			}
+			
+			#pragma omp for nowait
+			for(i=left->len; i<temp->len; ++i){
+				temp->a[i] = 0 | right->a[i];
+			}
 		}
 		
 	}
-	return temp;
+	
 }
 
 
 bigint_t* bz_por(bigint_t* left, bigint_t* right){
-	
-	size_t lt = 0;
 	size_t tempcap = 0;
 	size_t templen = 0;
 	if(left->len > right->len){
 		templen = left->len;
 		tempcap = left->cap;
-		lt = right->len;
 	}else{
 		templen = right->len;
 		tempcap = right->cap;
-		lt = left->len;
 	}
 	bigint_t * temp = bz_new(tempcap);
-	
-	//temp-> neg = left->neg | righ->neg;
-	size_t i;
-	#pragma omp parallel for
-	for(i=0; i<lt; ++i){
-		temp->a[i] = left->a[i] | right->a[i];
-	}
-	
-	if(left->len > right->len){
-		#pragma omp parallel for
-		for(i=lt; i<temp->len; ++i){
-			temp->a[i] = left->a[i] | 0;
-		}
-	}else{
-		#pragma omp parallel for
-		for(i=lt; i<temp->len; ++i){
-			temp->a[i] = 0 | right->a[i];
-		}
-		
-	}
+	bz_por_(left,right,temp);
 	return temp;
 }
 
 
-bigint_t* bz_sxor(bigint_t* left, bigint_t* right){
+void bz_sxor_(bigint_t* left, bigint_t* right, bigint_t* temp){
 	
-	size_t lt = 0;
+	//temp-> neg = left->neg | righ->neg;
+	size_t i;
+	if(left->len > right->len){
+		for(i=0; i<right->len; ++i){
+			temp->a[i] = left->a[i] ^ right->a[i];
+		}
+		for(i=right->len; i<temp->len; ++i){
+			temp->a[i] = left->a[i] ^ 0;
+		}
+	}else{
+		for(i=0; i<left->len; ++i){
+			temp->a[i] = left->a[i] ^ right->a[i];
+		}
+		for(i=left->len; i<temp->len; ++i){
+			temp->a[i] = 0 ^ right->a[i];
+		}
+		
+	}
+	
+}
+
+
+bigint_t* bz_sxor(bigint_t* left, bigint_t* right){
 	size_t tempcap = 0;
 	size_t templen = 0;
 	if(left->len > right->len){
 		templen = left->len;
 		tempcap = left->cap;
-		lt = right->len;
 	}else{
 		templen = right->len;
 		tempcap = right->cap;
-		lt = left->len;
 	}
 	bigint_t * temp = bz_new(tempcap);
+	bz_sxor_(left,right,temp);
+	return temp;
+}
+
+void bz_pxor_(bigint_t* left, bigint_t* right, bigint_t* temp){
 	
 	//temp-> neg = left->neg | righ->neg;
 	size_t i;
-	for(i=0; i<lt; ++i){
-		temp->a[i] = left->a[i] ^ right->a[i];
-	}
-	
 	if(left->len > right->len){
-		for(i=lt; i<temp->len; ++i){
-			temp->a[i] = left->a[i] ^ 0;
+		#pragma omp parallel
+		{
+			#pragma omp for	nowait
+			for(i=0; i<right->len; ++i){
+				temp->a[i] = left->a[i] ^ right->a[i];
+			}
+			#pragma omp for	nowait
+			for(i=right->len; i<temp->len; ++i){
+				temp->a[i] = left->a[i] ^ 0;
+			}
 		}
 	}else{
-		for(i=lt; i<temp->len; ++i){
-			temp->a[i] = 0 ^ right->a[i];
+		#pragma omp parallel
+		{
+			#pragma omp for	nowait
+			for(i=0; i<left->len; ++i){
+				temp->a[i] = left->a[i] ^ right->a[i];
+			}
+			#pragma omp for	nowait
+			for(i=left->len; i<temp->len; ++i){
+				temp->a[i] = 0 ^ right->a[i];
+			}
 		}
-		
 	}
-	return temp;
 }
 
 
@@ -193,30 +307,19 @@ bigint_t* bz_pxor(bigint_t* left, bigint_t* right){
 		lt = left->len;
 	}
 	bigint_t * temp = bz_new(tempcap);
-	
-	//temp-> neg = left->neg | righ->neg;
-	size_t i;
-	#pragma omp parallel for	
-	for(i=0; i<lt; ++i){
-		temp->a[i] = left->a[i] ^ right->a[i];
-	}
-	
-	if(left->len > right->len){
-		#pragma omp parallel for	
-		for(i=lt; i<temp->len; ++i){
-			temp->a[i] = left->a[i] ^ 0;
-		}
-	}else{
-		#pragma omp parallel for	
-		for(i=lt; i<temp->len; ++i){
-			temp->a[i] = 0 ^ right->a[i];
-		}
-		
-	}
+	bz_pxor_(left,right,temp);
 	return temp;
 }
 
+void bz_pand_(bigint_t* left, bigint_t* right, bigint_t* temp){
+	//temp-> neg = left->neg & righ->neg;
+	size_t i;
+	#pragma omp parallel for
+	for(i=0; i< temp->len; ++i){
+		temp->a[i] = left->a[i] & right->a[i];
+	}
 
+}
 
 bigint_t* bz_pand(bigint_t* left, bigint_t* right){
 	uint32_t templen = 0;
@@ -232,13 +335,7 @@ bigint_t* bz_pand(bigint_t* left, bigint_t* right){
 	bigint_t * temp = bz_new(tempcap);
 	temp->len = templen;
 	temp->cap = templen;
-	//temp-> neg = left->neg & righ->neg;
-	size_t i;
-#pragma omp parallel for	
-	for(i=0; i< temp->len; ++i){
-		temp->a[i] = left->a[i] & right->a[i];
-		
-	}
+	bz_pand_(left, right, temp);
 	return temp;
 }
 
@@ -399,7 +496,7 @@ bigint_t *bz_smult(bigint_t *x, bigint_t *y) {
   
   return p;
 }
-
+#if 0
 bigint_t *bz_pmult(bigint_t *x, bigint_t *y) {
   int i, nthreads;
   size_t j, n, t, d, l;
@@ -563,7 +660,7 @@ static void bz_div_(bigint_t *x, bigint_t *y, bigint_t *q, bigint_t *r,
   bz_free(x);
 }
 
-#if 0
+
 bigint_t *bz_sdiv(bigint_t *x, bigint_t *y, bigint_t **r) {
   bigint_t *q;
 
