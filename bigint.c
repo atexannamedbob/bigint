@@ -37,14 +37,13 @@ int main() {
 	
 }
 
-//TODO
 bool bz_pequal(bigint_t* left, bigint_t* right){
 	
 	if(left->len != right->len){
-		return 0;
+		return false;
 	}
 	if(left->neg != right->neg){
-		return 0;
+		return false;
 	}
 	size_t i;
 	bool equality = true;
@@ -64,6 +63,9 @@ bool bz_sequal(bigint_t* left, bigint_t* right){
 
 	if(left->len != right->len){
 		return true;
+	}
+	if(left->neg != right->neg){
+		return false;
 	}
 	size_t i;
 	for(i=0; i<left->len; ++i){
