@@ -15,6 +15,233 @@ typedef int (*bz_compare_t)(bigint_t *, bigint_t *);
 static const ddigit_t upper_mask = ~0ull << RADIXBITS;
 static const ddigit_t lower_mask = ~0ull >> RADIXBITS;
 
+
+
+bigint_t* bz_sand(bigint_t* left, bigint_t* right){
+	size_t templen = 0;
+	size_t tempcap = 0;
+	if((left->len) > (right->len)){
+		templen = right->len;
+		tempcap = right->cap;
+	}else{
+		templen = left->len;
+		tempcap = left->cap;
+	}
+	
+	bigint_t * temp = bz_new(tempcap);
+	temp->len = templen;
+	temp->cap = templen;
+	//temp-> neg = left->neg & righ->neg;
+	size_t i;
+	for(i=0; i< temp->len; ++i){
+		temp->a[i] = left->a[i] & right->a[i];
+		
+	}
+	return temp;
+}
+
+bigint_t* bz_snot( bigint_t* right){
+	
+	
+	bigint_t * temp = bz_new(right->cap);
+	temp->cap = right->len;
+	//temp-> neg = ~righ->neg;
+	size_t i;
+	for(i=0; i<temp->len; ++i){
+		temp->a[i] = ~right->a[i];
+		
+	}
+	return temp;
+}
+
+bigint_t* bz_pnot( bigint_t* right){
+	bigint_t * temp = bz_new(right->cap);
+	temp->cap = right->len;
+	//temp-> neg = ~righ->neg;
+	size_t i;
+	#pragma omp parallel for
+	for(i=0; i<temp->len; ++i){
+		temp->a[i] = ~right->a[i];
+		
+	}
+	return temp;
+}
+
+bigint_t* bz_sor(bigint_t* left, bigint_t* right){
+	
+	size_t lt = 0;
+	size_t tempcap = 0;
+	size_t templen = 0;
+	if(left->len > right->len){
+		templen = left->len;
+		tempcap = left->cap;
+		lt = right->len;
+	}else{
+		templen = right->len;
+		tempcap = right->cap;
+		lt = left->len;
+	}
+	bigint_t * temp = bz_new(tempcap);
+	
+	//temp-> neg = left->neg | righ->neg;
+	size_t i;
+	for(i=0; i<lt; ++i){
+		temp->a[i] = left->a[i] | right->a[i];
+	}
+	
+	if(left->len > right->len){
+		for(i=lt; i<temp->len; ++i){
+			temp->a[i] = left->a[i] | 0;
+		}
+	}else{
+		for(i=lt; i<temp->len; ++i){
+			temp->a[i] = 0 | right->a[i];
+		}
+		
+	}
+	return temp;
+}
+
+
+bigint_t* bz_por(bigint_t* left, bigint_t* right){
+	
+	size_t lt = 0;
+	size_t tempcap = 0;
+	size_t templen = 0;
+	if(left->len > right->len){
+		templen = left->len;
+		tempcap = left->cap;
+		lt = right->len;
+	}else{
+		templen = right->len;
+		tempcap = right->cap;
+		lt = left->len;
+	}
+	bigint_t * temp = bz_new(tempcap);
+	
+	//temp-> neg = left->neg | righ->neg;
+	size_t i;
+	#pragma omp parallel for
+	for(i=0; i<lt; ++i){
+		temp->a[i] = left->a[i] | right->a[i];
+	}
+	
+	if(left->len > right->len){
+		#pragma omp parallel for
+		for(i=lt; i<temp->len; ++i){
+			temp->a[i] = left->a[i] | 0;
+		}
+	}else{
+		#pragma omp parallel for
+		for(i=lt; i<temp->len; ++i){
+			temp->a[i] = 0 | right->a[i];
+		}
+		
+	}
+	return temp;
+}
+
+
+bigint_t* bz_sxor(bigint_t* left, bigint_t* right){
+	
+	size_t lt = 0;
+	size_t tempcap = 0;
+	size_t templen = 0;
+	if(left->len > right->len){
+		templen = left->len;
+		tempcap = left->cap;
+		lt = right->len;
+	}else{
+		templen = right->len;
+		tempcap = right->cap;
+		lt = left->len;
+	}
+	bigint_t * temp = bz_new(tempcap);
+	
+	//temp-> neg = left->neg | righ->neg;
+	size_t i;
+	for(i=0; i<lt; ++i){
+		temp->a[i] = left->a[i] ^ right->a[i];
+	}
+	
+	if(left->len > right->len){
+		for(i=lt; i<temp->len; ++i){
+			temp->a[i] = left->a[i] ^ 0;
+		}
+	}else{
+		for(i=lt; i<temp->len; ++i){
+			temp->a[i] = 0 ^ right->a[i];
+		}
+		
+	}
+	return temp;
+}
+
+
+bigint_t* bz_pxor(bigint_t* left, bigint_t* right){
+	
+	size_t lt = 0;
+	size_t tempcap = 0;
+	size_t templen = 0;
+	if(left->len > right->len){
+		templen = left->len;
+		tempcap = left->cap;
+		lt = right->len;
+	}else{
+		templen = right->len;
+		tempcap = right->cap;
+		lt = left->len;
+	}
+	bigint_t * temp = bz_new(tempcap);
+	
+	//temp-> neg = left->neg | righ->neg;
+	size_t i;
+	#pragma omp parallel for	
+	for(i=0; i<lt; ++i){
+		temp->a[i] = left->a[i] ^ right->a[i];
+	}
+	
+	if(left->len > right->len){
+		#pragma omp parallel for	
+		for(i=lt; i<temp->len; ++i){
+			temp->a[i] = left->a[i] ^ 0;
+		}
+	}else{
+		#pragma omp parallel for	
+		for(i=lt; i<temp->len; ++i){
+			temp->a[i] = 0 ^ right->a[i];
+		}
+		
+	}
+	return temp;
+}
+
+
+
+bigint_t* bz_pand(bigint_t* left, bigint_t* right){
+	uint32_t templen = 0;
+	uint32_t tempcap = 0;
+	if((left->len) > (right->len)){
+		templen = right->len;
+		tempcap = right->cap;
+	}else{
+		templen = left->len;
+		tempcap = left->cap;
+	}
+	
+	bigint_t * temp = bz_new(tempcap);
+	temp->len = templen;
+	temp->cap = templen;
+	//temp-> neg = left->neg & righ->neg;
+	size_t i;
+#pragma omp parallel for	
+	for(i=0; i< temp->len; ++i){
+		temp->a[i] = left->a[i] & right->a[i];
+		
+	}
+	return temp;
+}
+
 /* Trim length to be actual length, not counting leading zeros. */
 static bigint_t *trim(bigint_t *x) {
   size_t i = x->len - 1;
