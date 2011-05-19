@@ -43,7 +43,6 @@ bool bz_pequal(bigint_t* left, bigint_t* right){
 	if(left->len != right->len){
 		return 0;
 	}
-	
 	size_t i;
 	bool equality = true;
 	#pragma omp parallel for shared(equality)
@@ -69,7 +68,6 @@ bool bz_sequal(bigint_t* left, bigint_t* right){
 			return false;				
 		}
 	}
-	
 	return true;
 }
 
@@ -143,13 +141,7 @@ void bz_sor_(bigint_t* left, bigint_t* right, bigint_t* temp){
 			temp->a[i] = left->a[i] | 0;
 		}
 	}else{
-		for(i=0; i<left->len; ++i){
-			temp->a[i] = left->a[i] | right->a[i];
-		}
-		for(i=left->len; i<temp->len; ++i){
-			temp->a[i] = 0 | right->a[i];
-		}
-		
+		bz_sor_(right,left,temp);
 	}
 
 }
@@ -187,18 +179,7 @@ void bz_por_(bigint_t* left, bigint_t* right, bigint_t* temp){
 			}
 		}
 	}else{
-		#pragma omp parallel
-		{
-			#pragma omp for nowait
-			for(i=0; i<left->len; ++i){
-				temp->a[i] = left->a[i] | right->a[i];
-			}
-			
-			#pragma omp for nowait
-			for(i=left->len; i<temp->len; ++i){
-				temp->a[i] = 0 | right->a[i];
-			}
-		}
+		bz_por_(right,left,temp);
 		
 	}
 	
@@ -233,13 +214,7 @@ void bz_sxor_(bigint_t* left, bigint_t* right, bigint_t* temp){
 			temp->a[i] = left->a[i] ^ 0;
 		}
 	}else{
-		for(i=0; i<left->len; ++i){
-			temp->a[i] = left->a[i] ^ right->a[i];
-		}
-		for(i=left->len; i<temp->len; ++i){
-			temp->a[i] = 0 ^ right->a[i];
-		}
-		
+		bz_sxor_(right,left,temp);
 	}
 	
 }
@@ -277,34 +252,20 @@ void bz_pxor_(bigint_t* left, bigint_t* right, bigint_t* temp){
 			}
 		}
 	}else{
-		#pragma omp parallel
-		{
-			#pragma omp for	nowait
-			for(i=0; i<left->len; ++i){
-				temp->a[i] = left->a[i] ^ right->a[i];
-			}
-			#pragma omp for	nowait
-			for(i=left->len; i<temp->len; ++i){
-				temp->a[i] = 0 ^ right->a[i];
-			}
-		}
+		bz_pxor_(right,left,temp);
 	}
 }
 
 
-bigint_t* bz_pxor(bigint_t* left, bigint_t* right){
-	
-	size_t lt = 0;
+bigint_t* bz_pxor(bigint_t* left, bigint_t* right){	
 	size_t tempcap = 0;
 	size_t templen = 0;
 	if(left->len > right->len){
 		templen = left->len;
 		tempcap = left->cap;
-		lt = right->len;
 	}else{
 		templen = right->len;
 		tempcap = right->cap;
-		lt = left->len;
 	}
 	bigint_t * temp = bz_new(tempcap);
 	bz_pxor_(left,right,temp);
